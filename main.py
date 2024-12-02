@@ -8,7 +8,7 @@ import os
 from db import get_user_config, update_user_config, clear_user_config
 
 # Define the Bot Token directly
-BOT_TOKEN = "8195569776:AAFLMWcJllRvPUgP3RgrWFWla6p56xS3kHU"
+BOT_TOKEN = "7548654576:AAGAu8B73cYEpRBlwDE1kAh1WTnyxzZ_KO0"
 if not BOT_TOKEN:
     raise ValueError("Bot token is missing")
 
@@ -156,6 +156,9 @@ async def generate_voice_command(message: Message):
     voice_id = user_config.get("voice_id", DEFAULT_PARAMS["voice_id"])
     voice_settings = user_config.get("voice_settings", DEFAULT_PARAMS)
 
+    # Send progress message
+    progress_message = await message.answer("<b>Processing your request...</b>", parse_mode="HTML")
+
     audio_path = None
     try:
         # Update character count
@@ -163,11 +166,16 @@ async def generate_voice_command(message: Message):
         character_count += len(text)
         await update_user_config(user_id, {"character_count": character_count})
 
+        # Generate the audio file
         audio_path = await generate_elevenlabs_audio(text, api_key, voice_id, voice_settings)
         audio_file = FSInputFile(audio_path)
+        
+        # Edit the progress message with a success note and send the audio
+        await progress_message.edit_text("<b>Voice generated successfully! Sending the file...</b>", parse_mode="HTML")
         await bot.send_voice(chat_id=message.chat.id, voice=audio_file)
     except Exception as e:
-        await message.answer(f"Error: {e}")
+        # Edit the progress message with an error note
+        await progress_message.edit_text(f"<b>Error:</b> {e}", parse_mode="HTML")
     finally:
         if audio_path and os.path.exists(audio_path):
             os.remove(audio_path)
