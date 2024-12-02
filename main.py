@@ -69,9 +69,9 @@ async def generate_elevenlabs_audio(text: str, api_key: str, voice_id: str, voic
 @router.message(Command("start"))
 async def start_command(message: Message):
     await message.answer(
-        "Welcome! Use /setapi <your_api_key> to set your Eleven Labs API key. "
-        "Use /setvoice <voice_id> to set your voice ID. "
-        "Use /setsettings <stability> <similarity_boost> to configure your voice settings.\n\n"
+        "Welcome! Use /setapi [your_api_key] to set your Eleven Labs API key. "
+        "Use /setvoice [voice_id] to set your voice ID. "
+        "Use /setsettings [stability] [similarity_boost] to configure your voice settings.\n\n"
         "<b>Important:</b> Remember to configure your API key and voice settings first!",
         parse_mode="HTML"
     )
