@@ -69,10 +69,17 @@ async def generate_elevenlabs_audio(text: str, api_key: str, voice_id: str, voic
 @router.message(Command("start"))
 async def start_command(message: Message):
     await message.answer(
-        "Welcome! Use /setapi [your_api_key] to set your Eleven Labs API key. "
-        "Use /setvoice [voice_id] to set your voice ID. "
-        "Use /setsettings [stability] [similarity_boost] to configure your voice settings.\n\n"
-        "<b>Important:</b> Remember to configure your API key and voice settings first!",
+        "<b>Welcome to the ElevenLabs Assistant!</b>\n\n"
+        "I'm here to help you manage your ElevenLabs account directly from Telegram.\n\n"
+        "What can I do for you?\n"
+        "<ul>"
+        "<li>Create new voices</li>"
+        "<li>Manage existing voices</li>"
+        "<li>Generate text-to-speech</li>"
+        "<li>And much more!</li>"
+        "</ul>\n\n"
+        "Just send me a command to get started.\n\n"
+        "<i>Need help? Type /help for a list of commands.</i>",
         parse_mode="HTML"
     )
 
