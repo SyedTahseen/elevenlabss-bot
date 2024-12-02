@@ -33,6 +33,18 @@ async def get_or_initialize_character_count(user_id):
         await update_user_config(user_id, user_config)
     return user_config.get("character_count", 0)
 
+async def get_existing_voices(api_key: str):
+    headers = {
+        "xi-api-key": api_key,
+    }
+    async with httpx.AsyncClient() as client:
+        response = await client.get("https://api.elevenlabs.io/v1/voices", headers=headers)
+        if response.status_code == 200:
+            return response.json().get("voices", [])
+        else:
+            return []
+            
+
 # Function to generate audio with Eleven Labs API
 async def generate_elevenlabs_audio(text: str, api_key: str, voice_id: str, voice_settings: dict):
     headers = {
@@ -166,6 +178,35 @@ async def clear_config_command(message: Message):
     await clear_user_config(user_id)
     await message.answer("Your configuration has been cleared.")
 
+@router.message(Command("listvoices"))
+async def list_voices_command(message: Message):
+    user_id = message.from_user.id
+    user_config = await get_user_config(user_id)
+    
+    if not user_config:
+        await message.answer("You need to configure your ElevenLabs API key first using /setapi.")
+        return
+
+    api_key = user_config.get("api_key")
+    if not api_key:
+        await message.answer("Your API key is missing. Use /setapi to set it.")
+        return
+
+    # Fetch the existing voices
+    existing_voices = await get_existing_voices(api_key)
+    
+    if not existing_voices:
+        await message.answer("<b>No existing voices found.</b>", parse_mode="HTML")
+        return
+
+    voices_list = "<b>Existing Voices:</b>\n"
+    for voice in existing_voices:
+        voice_name = voice.get('name', 'Unknown Voice')
+        voice_id = voice.get('voice_id', 'Unknown ID')  # Assuming voice_id is available in the API response
+        voices_list += f"<b>{voice_name}</b> - <code>{voice_id}</code>\n"  # Use <code> for voice ID
+
+    await message.answer(voices_list, parse_mode="HTML")
+
 @router.message(Command("profile"))
 async def show_config_command(message: Message):
     user_id = message.from_user.id
@@ -229,6 +270,7 @@ async def set_bot_commands():
         BotCommand(command="setapi", description="Set your Eleven Labs API key"),
         BotCommand(command="setvoice", description="Set your voice ID"),
         BotCommand(command="setsettings", description="Set your voice settings"),
+        BotCommand(command="listvoices", description="Set your voice settings"),
         BotCommand(command="generate", description="Generate a voice from text"),
         BotCommand(command="clearconfig", description="Clear your configuration"),
         BotCommand(command="profile", description="Show your current configuration"),
