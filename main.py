@@ -8,7 +8,7 @@ import os
 from db import get_user_config, update_user_config, clear_user_config
 
 # Define the Bot Token directly
-BOT_TOKEN = "7548654576:AAGAu8B73cYEpRBlwDE1kAh1WTnyxzZ_KO0"
+BOT_TOKEN = "8195569776:AAFLMWcJllRvPUgP3RgrWFWla6p56xS3kHU"
 if not BOT_TOKEN:
     raise ValueError("Bot token is missing")
 
@@ -69,7 +69,7 @@ async def generate_elevenlabs_audio(text: str, api_key: str, voice_id: str, voic
 @router.message(Command("start"))
 async def start_command(message: Message):
     await message.answer(
-        "Welcome! Use /setapi <your_api_key> to set your Eleven Labs API key. "
+        "<b>Welcome!</b> Use /setapi <your_api_key> to set your Eleven Labs API key. "
         "Use /setvoice <voice_id> to set your voice ID. "
         "Use /setsettings <stability> <similarity_boost> to configure your voice settings."
     )
@@ -159,7 +159,7 @@ async def clear_config_command(message: Message):
     await clear_user_config(user_id)
     await message.answer("Your configuration has been cleared.")
 
-@router.message(Command("showconfig"))
+@router.message(Command("profile"))
 async def show_config_command(message: Message):
     user_id = message.from_user.id
     user_config = await get_user_config(user_id)
@@ -189,31 +189,31 @@ async def show_config_command(message: Message):
 
     if subscription_info and "error" not in subscription_info:
         subscription_details = (
-            f"Plan: {subscription_info.get('tier', 'Unknown')}\n"
-            f"Character Count: {subscription_info.get('character_count', 'Unknown')}\n"
-            f"Character Limit: {subscription_info.get('character_limit', 'Unknown')}\n"
-            f"Remaining: {subscription_info.get('character_limit', 0) - subscription_info.get('character_count', 0)}\n"
-            f"Voice Limit: {subscription_info.get('voice_limit', 'Unknown')}\n"
-            f"Professional Voice Limit: {subscription_info.get('professional_voice_limit', 'Unknown')}\n"
-            f"Can Extend Character Limit: {subscription_info.get('can_extend_character_limit', False)}\n"
-            f"Instant Voice Cloning: {subscription_info.get('can_use_instant_voice_cloning', False)}\n"
-            f"Next Reset: {subscription_info.get('next_character_count_reset_unix', 'Unknown')}\n"
+            f"<b>Plan:</b> {subscription_info.get('tier', 'Unknown')}\n"
+            f"<b>Character Count:</b> {subscription_info.get('character_count', 'Unknown')}\n"
+            f"<b>Character Limit:</b> {subscription_info.get('character_limit', 'Unknown')}\n"
+            f"<b>Remaining:</b> {subscription_info.get('character_limit', 0) - subscription_info.get('character_count', 0)}\n"
+            f"<b>Voice Limit:</b> {subscription_info.get('voice_limit', 'Unknown')}\n"
+            f"<b>Professional Voice Limit:</b> {subscription_info.get('professional_voice_limit', 'Unknown')}\n"
+            f"<b>Can Extend Character Limit:</b> {subscription_info.get('can_extend_character_limit', False)}\n"
+            f"<b>Instant Voice Cloning:</b> {subscription_info.get('can_use_instant_voice_cloning', False)}\n"
+            f"<b>Next Reset:</b> {subscription_info.get('next_character_count_reset_unix', 'Unknown')}\n"
         )
     else:
         subscription_details = subscription_info.get("error", "Unable to fetch subscription details.")
 
     # Combine configuration and subscription details
     config_details = (
-        f"**Your Configuration:**\n"
-        f"API Key: {api_key}\n"
-        f"Voice ID: {voice_id}\n"
-        f"Voice Settings:\n"
-        f"  Stability: {voice_settings['stability']}\n"
-        f"  Similarity Boost: {voice_settings['similarity_boost']}\n"
-        f"Characters Processed: {character_count}\n\n"
-        f"**Subscription Information:**\n{subscription_details}"
+        f"<b>Your Configuration:</b>\n\n"
+        f"<b>API Key:</b> <code>{api_key}</code>\n"
+        f"<b>Voice ID:</b> <code>{voice_id}</code>\n\n"
+        f"<b>Voice Settings:</b>\n"
+        f"<b>Stability:</b> <code>{voice_settings['stability']}</code>\n"
+        f"<b>Similarity Boost:</b> <code>{voice_settings['similarity_boost']}</code>\n"
+        f"<b>Characters Processed:</b> <code>{character_count}</code>\n\n"
+        f"<b>Subscription Information:</b>\n{subscription_details}"
     )
-    await message.answer(config_details)
+    await message.answer(config_details, parse_mode="HTML")
 
 # Set bot commands
 async def set_bot_commands():
@@ -224,7 +224,7 @@ async def set_bot_commands():
         BotCommand(command="setsettings", description="Set your voice settings"),
         BotCommand(command="generate", description="Generate a voice from text"),
         BotCommand(command="clearconfig", description="Clear your configuration"),
-        BotCommand(command="showconfig", description="Show your current configuration"),
+        BotCommand(command="profile", description="Show your current configuration"),
     ]
     await bot.set_my_commands(commands)
 
