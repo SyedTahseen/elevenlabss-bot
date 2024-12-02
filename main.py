@@ -8,7 +8,7 @@ import os
 from db import get_user_config, update_user_config, clear_user_config
 
 # Define the Bot Token directly
-BOT_TOKEN = "8195569776:AAFLMWcJllRvPUgP3RgrWFWla6p56xS3kHU"
+BOT_TOKEN = "7548654576:AAGAu8B73cYEpRBlwDE1kAh1WTnyxzZ_KO0"
 if not BOT_TOKEN:
     raise ValueError("Bot token is missing")
 
