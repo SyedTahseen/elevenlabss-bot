@@ -71,15 +71,13 @@ async def start_command(message: Message):
     await message.answer(
         "<b>Welcome to the ElevenLabs Assistant!</b>\n\n"
         "I'm here to help you manage your ElevenLabs account directly from Telegram.\n\n"
-        "What can I do for you?\n"
-        "<ul>"
-        "<li>Create new voices</li>"
-        "<li>Manage existing voices</li>"
-        "<li>Generate text-to-speech</li>"
-        "<li>And much more!</li>"
-        "</ul>\n\n"
+        "<b>What can I do for you?</b>\n"
+        "* Create new voices"
+        "* Manage existing voices"
+        "* Generate text-to-speech"
+        "* And much more!/n/n"
         "Just send me a command to get started.\n\n"
-        "<i>Need help? Type /help for a list of commands.</i>",
+        "<b>Need help?</b> Type /help for a list of commands.",
         parse_mode="HTML"
     )
 
