@@ -355,7 +355,7 @@ async def show_config_command(message: Message):
         f"<b>Stability:</b> <code>{voice_settings.get('stability', 'Not set')}</code>\n"
         f"<b>Similarity Boost:</b> <code>{voice_settings.get('similarity_boost', 'Not set')}</code>\n"
         f"<b>Characters Processed:</b> <code>{character_count}</code>\n\n"
-        f"<b>Subscription Information:</b>\n{subscription_details}"
+        f"<b>ElevenLabs Subscription Information:</b>\n{subscription_details}"
     )
 
     await message.answer(config_details, parse_mode="HTML")
@@ -375,10 +375,28 @@ async def set_bot_commands():
     await bot.set_my_commands(commands)
 
 # Main function to start the bot
+
 async def main():
+    # Fetch bot details
+    bot_details = await bot.get_me()
+
+    # Display bot details in the terminal
+    print("=" * 40)
+    print("🚀 Starting Telegram Bot")
+    print(f"🤖 Bot Name: {bot_details.first_name}")
+    print(f"🆔 Bot Username: @{bot_details.username}")
+    print(f"🔑 Bot ID: {bot_details.id}")
+    print("=" * 40)
+
+    # Set bot commands
     await set_bot_commands()
-    await dp.start_polling(bot)
+
+    # Start polling
+    print("📡 Bot is now polling for updates...")
+    try:
+        await dp.start_polling(bot)
+    finally:
+        await bot.session.close()
 
 if __name__ == "__main__":
     asyncio.run(main())
-        
