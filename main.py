@@ -10,7 +10,7 @@ import aiofiles
 from db import get_user_config, update_user_config, clear_user_config
 
 # Define the Bot Token directly
-BOT_TOKEN = "7704808340:AAEmh5YwuGmg44AqwE0T2tCjqvYX-FMGwTM"
+BOT_TOKEN = "7612501799:AAE95Z4VBPAKreCVM0sVa1CnV6xvnKOzaZ8"
 if not BOT_TOKEN:
     raise ValueError("Bot token is missing")
 
