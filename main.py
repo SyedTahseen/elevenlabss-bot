@@ -282,8 +282,8 @@ async def show_config_command(message: Message):
 
     # Fetch subscription details
     subscription_info = None
-    if api_key != "Not set":
-        try:
+    try:
+        if api_key != "Not set":
             headers = {"xi-api-key": api_key}
             async with httpx.AsyncClient() as client:
                 response = await client.get("https://api.elevenlabs.io/v1/user/subscription", headers=headers)
@@ -291,9 +291,10 @@ async def show_config_command(message: Message):
                     subscription_info = response.json()
                 else:
                     subscription_info = {"error": f"Failed to fetch subscription info: {response.status_code}"}
-        except Exception as e:
-            subscription_info = {"error": str(e)}
+    except Exception as e:
+        subscription_info = {"error": str(e)}
 
+    # Format subscription details
     if subscription_info and "error" not in subscription_info:
         subscription_details = (
             f"<b>Plan:</b> {subscription_info.get('tier', 'Unknown')}\n"
@@ -309,19 +310,20 @@ async def show_config_command(message: Message):
     else:
         subscription_details = subscription_info.get("error", "Unable to fetch subscription details.")
 
-    # Combine configuration and subscription details
+    # Ensure all details are displayed, even if missing
     config_details = (
         f"<b>Your Configuration:</b>\n\n"
         f"<b>API Key:</b> <code>{api_key}</code>\n"
         f"<b>Voice ID:</b> <code>{voice_id}</code>\n\n"
         f"<b>Voice Settings:</b>\n"
-        f"<b>Stability:</b> <code>{voice_settings['stability']}</code>\n"
-        f"<b>Similarity Boost:</b> <code>{voice_settings['similarity_boost']}</code>\n"
+        f"<b>Stability:</b> <code>{voice_settings.get('stability', 'Not set')}</code>\n"
+        f"<b>Similarity Boost:</b> <code>{voice_settings.get('similarity_boost', 'Not set')}</code>\n"
         f"<b>Characters Processed:</b> <code>{character_count}</code>\n\n"
         f"<b>Subscription Information:</b>\n{subscription_details}"
     )
-    await message.answer(config_details, parse_mode="HTML")
 
+    await message.answer(config_details, parse_mode="HTML")
+    
 # Set bot commands
 async def set_bot_commands():
     commands = [
@@ -343,5 +345,4 @@ async def main():
 
 if __name__ == "__main__":
     asyncio.run(main())
-
-    
+        
