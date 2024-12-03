@@ -5,6 +5,7 @@ from aiogram.fsm.storage.memory import MemoryStorage
 import asyncio
 import httpx
 import os
+import aiofiles
 from db import get_user_config, update_user_config, clear_user_config
 
 # Define the Bot Token directly
@@ -46,7 +47,10 @@ async def get_existing_voices(api_key: str):
             
 
 # Function to generate audio with Eleven Labs API
-async def generate_elevenlabs_audio(text: str, api_key: str, voice_id: str, voice_settings: dict):
+async def generate_elevenlabs_audio(text: str, api_key: str, voice_id: str, voice_settings: dict, audio_path: str):
+    """
+    Generates audio using the ElevenLabs API and saves it to the specified path.
+    """
     headers = {
         "xi-api-key": api_key,
         "Content-Type": "application/json",
@@ -59,8 +63,6 @@ async def generate_elevenlabs_audio(text: str, api_key: str, voice_id: str, voic
         "text": text,
         "voice_settings": voice_settings,
     }
-
-    audio_path = "elevenlabs_voice.mp3"
 
     async with httpx.AsyncClient() as client:
         response = await client.post(
@@ -75,7 +77,25 @@ async def generate_elevenlabs_audio(text: str, api_key: str, voice_id: str, voic
         else:
             raise ValueError(f"Error from ElevenLabs API (status {response.status_code}): {response.text}")
 
-    return audio_path
+# Function to upload file to file.io
+async def upload_to_file_io(file_path: str) -> str:
+    """
+    Uploads a file to file.io and returns the download link.
+    """
+    try:
+        async with httpx.AsyncClient() as client:
+            with open(file_path, "rb") as file:
+                response = await client.post(
+                    "https://file.io/", files={"file": file}
+                )
+                if response.status_code == 200:
+                    data = response.json()
+                    return data.get("link", "No link provided")
+                else:
+                    raise ValueError(f"File.io API error: {response.text}")
+    except Exception as e:
+        raise ValueError(f"Failed to upload file to file.io: {e}")
+        
 
 # Command Handlers
 @router.message(Command("start"))
@@ -145,7 +165,9 @@ async def generate_voice_command(message: Message):
     user_config = await get_user_config(user_id)
 
     if not user_config:
-        await message.answer("Please configure your API key, voice ID, and settings first using /setapi, /setvoice, and /setsettings.")
+        await message.answer(
+            "Please configure your API key, voice ID, and settings first using /setapi, /setvoice, and /setsettings."
+        )
         return
 
     api_key = user_config.get("api_key")
@@ -159,7 +181,9 @@ async def generate_voice_command(message: Message):
     # Send progress message
     progress_message = await message.answer("<b>Processing your request...</b>", parse_mode="HTML")
 
-    audio_path = None
+    # Define a unique path for the audio file
+    audio_path = f"elevenlabs_voice_{user_id}.mp3"
+
     try:
         # Update character count
         character_count = await get_or_initialize_character_count(user_id)
@@ -167,18 +191,35 @@ async def generate_voice_command(message: Message):
         await update_user_config(user_id, {"character_count": character_count})
 
         # Generate the audio file
-        audio_path = await generate_elevenlabs_audio(text, api_key, voice_id, voice_settings)
+        await generate_elevenlabs_audio(text, api_key, voice_id, voice_settings, audio_path)
+
+        # Confirm the file exists
+        if not os.path.exists(audio_path):
+            raise FileNotFoundError(f"Audio file not found at {audio_path}")
+
+        # Upload the file to file.io and get the link
+        file_io_link = await upload_to_file_io(audio_path)
+
+        # Edit the progress message with a success note
+        await progress_message.edit_text(
+            f"<b>Voice generated successfully!</b>\n\n"
+            f"<b>File.io Link:</b> <a href='{file_io_link}'>{file_io_link}</a>",
+            parse_mode="HTML",
+        )
+
+        # Send the audio file directly
         audio_file = FSInputFile(audio_path)
-        
-        # Edit the progress message with a success note and send the audio
-        await progress_message.edit_text("<b>Voice generated successfully! Sending the file...</b>", parse_mode="HTML")
         await bot.send_voice(chat_id=message.chat.id, voice=audio_file)
+
     except Exception as e:
         # Edit the progress message with an error note
         await progress_message.edit_text(f"<b>Error:</b> {e}", parse_mode="HTML")
     finally:
+        # Clean up the temporary audio file
         if audio_path and os.path.exists(audio_path):
             os.remove(audio_path)
+
+
 
 @router.message(Command("clearconfig"))
 async def clear_config_command(message: Message):
@@ -292,3 +333,4 @@ async def main():
 
 if __name__ == "__main__":
     asyncio.run(main())
+        
