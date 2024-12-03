@@ -130,12 +130,10 @@ async def set_api_command(message: types.Message):
     args = message.text.split(maxsplit=1)
 
     if len(args) < 2:
-        # Create an inline keyboard with one button
+        # Inline keyboard to guide users to get their API key
         keyboard = InlineKeyboardMarkup(inline_keyboard=[
             [InlineKeyboardButton(text="Get your Eleven Labs API Key", url="https://elevenlabs.io")]
         ])
-        
-        # Send a usage message with the inline button
         await message.answer(
             "To set your <b>Eleven Labs API key</b>, use this command like:\n"
             "<code>/setapi &lt;your_api_key&gt;</code>\n\n"
@@ -146,8 +144,35 @@ async def set_api_command(message: types.Message):
         return
 
     api_key = args[1].strip()
-    await update_user_config(user_id, {"api_key": api_key})
-    await message.answer("Your <b>API key</b> has been successfully set. 🎉", parse_mode="HTML")
+
+    # Verify the API key
+    headers = {"xi-api-key": api_key}
+    try:
+        async with httpx.AsyncClient() as client:
+            response = await client.get("https://api.elevenlabs.io/v1/user/subscription", headers=headers)
+
+        if response.status_code == 200:
+            # Save the API key if it's valid
+            await update_user_config(user_id, {"api_key": api_key})
+            subscription_info = response.json()
+            character_limit = subscription_info.get("character_limit", "Unknown")
+            await message.answer(
+                f"Your <b>API key</b> has been successfully verified and set. 🎉\n"
+                f"<b>Character Limit:</b> {character_limit}",
+                parse_mode="HTML"
+            )
+        else:
+            await message.answer(
+                f"<b>Error:</b> The API key is invalid or not authorized. Please check your key and try again.",
+                parse_mode="HTML"
+            )
+    except Exception as e:
+        await message.answer(
+            f"<b>Error:</b> Unable to verify the API key. Please try again later.\n"
+            f"<code>{str(e)}</code>",
+            parse_mode="HTML"
+        )
+
 
 @router.message(Command("setvoice"))
 async def set_voice_command(message: types.Message):
