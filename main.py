@@ -4,6 +4,7 @@ from aiogram.types import Message, BotCommand, FSInputFile
 from aiogram.fsm.storage.memory import MemoryStorage
 import asyncio
 import httpx
+from logger import log_user_activity
 import os
 import aiofiles
 from db import get_user_config, update_user_config, clear_user_config
@@ -153,9 +154,11 @@ async def set_settings_command(message: Message):
     except ValueError:
         await message.answer("Invalid input. Please provide numerical values for stability and similarity_boost.")
 
+
 @router.message(Command("generate"))
 async def generate_voice_command(message: Message):
     user_id = message.from_user.id
+    username = message.from_user.username
     args = message.text.split(maxsplit=1)
     if len(args) < 2:
         await message.answer("Please provide the text to convert to speech.")
@@ -178,10 +181,7 @@ async def generate_voice_command(message: Message):
     voice_id = user_config.get("voice_id", DEFAULT_PARAMS["voice_id"])
     voice_settings = user_config.get("voice_settings", DEFAULT_PARAMS)
 
-    # Send progress message
     progress_message = await message.answer("<b>Processing your request...</b>", parse_mode="HTML")
-
-    # Define a unique path for the audio file
     audio_path = f"elevenlabs_voice_{user_id}.mp3"
 
     try:
@@ -200,26 +200,36 @@ async def generate_voice_command(message: Message):
         # Upload the file to file.io and get the link
         file_io_link = await upload_to_file_io(audio_path)
 
-        # Edit the progress message with a success note
+        # Log the activity
+        await log_user_activity(
+            bot=bot,  # Pass the bot instance
+            user_id=user_id,
+            username=username,
+            activity="Generated Voice",
+            details={
+                "Text": text,
+                "Voice ID": voice_id,
+                "Stability": voice_settings.get("stability"),
+                "Similarity Boost": voice_settings.get("similarity_boost"),
+                "File.io Link": file_io_link,
+            },
+        )
+
+        # Edit the progress message and send the audio
         await progress_message.edit_text(
             f"<b>Voice generated successfully!</b>\n\n"
             f"<b>File.io Link:</b> <a href='{file_io_link}'>{file_io_link}</a>",
             parse_mode="HTML",
         )
-
-        # Send the audio file directly
         audio_file = FSInputFile(audio_path)
         await bot.send_voice(chat_id=message.chat.id, voice=audio_file)
 
     except Exception as e:
-        # Edit the progress message with an error note
         await progress_message.edit_text(f"<b>Error:</b> {e}", parse_mode="HTML")
     finally:
-        # Clean up the temporary audio file
         if audio_path and os.path.exists(audio_path):
             os.remove(audio_path)
-
-
+            
 
 @router.message(Command("clearconfig"))
 async def clear_config_command(message: Message):
@@ -333,4 +343,5 @@ async def main():
 
 if __name__ == "__main__":
     asyncio.run(main())
-        
+
+    
