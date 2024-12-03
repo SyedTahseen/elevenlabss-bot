@@ -8,6 +8,8 @@ from logger import log_user_activity
 import os
 import aiofiles
 from db import get_user_config, update_user_config, clear_user_config
+from aiogram.types import InlineKeyboardButton, InlineKeyboardMarkup
+from aiogram import types
 
 # Define the Bot Token directly
 BOT_TOKEN = "7612501799:AAE95Z4VBPAKreCVM0sVa1CnV6xvnKOzaZ8"
@@ -100,43 +102,77 @@ async def upload_to_file_io(file_path: str) -> str:
 
 # Command Handlers
 @router.message(Command("start"))
-async def start_command(message: Message):
+async def start_command(message: types.Message):
+    # Create an inline keyboard with buttons
+    keyboard = InlineKeyboardMarkup(inline_keyboard=[
+        [InlineKeyboardButton(text="View Documentation", url="https://elevenlabs.io/docs")],
+        [InlineKeyboardButton(text="Contact Support", url="https://t.me/xwvux")]
+    ])
+
+    # Send the welcome message with the inline buttons
     await message.answer(
-        "<b>Welcome to the ElevenLabs Assistant!</b>\n\n"
+        "<b>Welcome to the ElevenLabs Manager!</b>\n\n"
         "I'm here to help you manage your ElevenLabs account directly from Telegram.\n\n"
         "<b>What can I do for you?</b>\n"
-        "* Create new voices\n"
-        "* Manage existing voices\n"
-        "* Generate text-to-speech\n"
-        "* And much more!\n\n"
+        "• Generate text-to-speech\n"
+        "• Use multiple accounts\n"
+        "• Manage existing voices\n"
+        "• And much more!\n\n"
         "Just send me a command to get started.\n\n"
-        "<b>Need help?</b> Type /help for a list of commands.",
-        parse_mode="HTML"
+        "<b>Need help?</b> Use the buttons below to read the documentation or contact support.",
+        parse_mode="HTML",
+        reply_markup=keyboard
     )
 
 @router.message(Command("setapi"))
-async def set_api_command(message: Message):
+async def set_api_command(message: types.Message):
     user_id = message.from_user.id
     args = message.text.split(maxsplit=1)
+
     if len(args) < 2:
-        await message.answer("Please provide your Eleven Labs API key.")
+        # Create an inline keyboard with one button
+        keyboard = InlineKeyboardMarkup(inline_keyboard=[
+            [InlineKeyboardButton(text="Get your Eleven Labs API Key", url="https://elevenlabs.io")]
+        ])
+        
+        # Send a usage message with the inline button
+        await message.answer(
+            "To set your <b>Eleven Labs API key</b>, use this command like:\n"
+            "<code>/setapi &lt;your_api_key&gt;</code>\n\n"
+            "Don't have an API key? Click the button below to get one.",
+            reply_markup=keyboard,
+            parse_mode="HTML"
+        )
         return
 
     api_key = args[1].strip()
     await update_user_config(user_id, {"api_key": api_key})
-    await message.answer("Your API key has been set.")
+    await message.answer("Your <b>API key</b> has been successfully set. 🎉", parse_mode="HTML")
 
 @router.message(Command("setvoice"))
-async def set_voice_command(message: Message):
+async def set_voice_command(message: types.Message):
     user_id = message.from_user.id
     args = message.text.split(maxsplit=1)
+
     if len(args) < 2:
-        await message.answer("Please provide a valid voice ID.")
+        # Create an inline keyboard with a button to fetch voice IDs
+        keyboard = InlineKeyboardMarkup(inline_keyboard=[
+            [InlineKeyboardButton(text="Get Voice IDs", url="https://elevenlabs.io/voice-lab")]
+        ])
+        
+        # Send a usage message with the inline button
+        await message.answer(
+            "To set a <b>voice ID</b>, use this command like:\n\n"
+            "<code>/setvoice &lt;voice_id&gt;</code>"
+            "Don't know your voice ID? Click the button below to explore available voices.",
+            reply_markup=keyboard,
+            parse_mode="HTML"
+        )
         return
 
     voice_id = args[1].strip()
     await update_user_config(user_id, {"voice_id": voice_id})
-    await message.answer(f"Your voice ID has been set to {voice_id}.")
+    await message.answer(f"Your <b>voice ID</b> has been set to <code>{voice_id}</code>.", parse_mode="HTML")
 
 @router.message(Command("setsettings"))
 async def set_settings_command(message: Message):
