@@ -189,7 +189,7 @@ async def set_voice_command(message: types.Message):
         # Send a usage message with the inline button
         await message.answer(
             "To set a <b>voice ID</b>, use this command like:\n\n"
-            "<code>/setvoice &lt;voice_id&gt;</code>\n"
+            "<code>/setvoice &lt;voice_id&gt;</code>\n\n"
             "Don't know your voice ID? Click the button below to explore available voices.",
             reply_markup=keyboard,
             parse_mode="HTML"
