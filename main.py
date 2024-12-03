@@ -7,6 +7,7 @@ import httpx
 from logger import log_user_activity
 import os
 import aiofiles
+from datetime import datetime
 from db import get_user_config, update_user_config, clear_user_config
 from aiogram.types import InlineKeyboardButton, InlineKeyboardMarkup
 from aiogram import types
@@ -322,10 +323,76 @@ async def list_voices_command(message: Message):
     voices_list = "<b>Existing Voices:</b>\n"
     for voice in existing_voices:
         voice_name = voice.get('name', 'Unknown Voice')
-        voice_id = voice.get('voice_id', 'Unknown ID')  # Assuming voice_id is available in the API response
-        voices_list += f"<b>{voice_name}</b> - <code>{voice_id}</code>\n"  # Use <code> for voice ID
+        voice_id = voice.get('voice_id', 'Unknown ID')
+        voices_list += f"<b>{voice_name}</b> - <code>{voice_id}</code>\n"
 
     await message.answer(voices_list, parse_mode="HTML")
+
+@router.message(Command("history"))
+async def history_command(message: Message):
+    user_id = message.from_user.id
+    user_config = await get_user_config(user_id)
+
+    if not user_config:
+        await message.answer("Please configure your API key first using /setapi.")
+        return
+
+    api_key = user_config.get("api_key")
+    if not api_key:
+        await message.answer("Your API key is missing. Use /setapi to set it.")
+        return
+
+    # Fetch history from ElevenLabs API
+    try:
+        headers = {"xi-api-key": api_key}
+        async with httpx.AsyncClient() as client:
+            response = await client.get("https://api.elevenlabs.io/v1/history", headers=headers)
+
+            if response.status_code == 200:
+                history_data = response.json()
+                history_items = history_data.get("history", [])
+
+                if not history_items:
+                    await message.answer("<b>No history found.</b>", parse_mode="HTML")
+                    return
+
+                # Prepare the history data
+                history_texts = []
+                current_text = "<b>Your ElevenLabs Usage History:</b>\n\n"
+                
+                for item in history_items:
+                    text = item.get("text", "No text available")
+                    date_unix = item.get("date_unix", 0)
+                    date = datetime.utcfromtimestamp(date_unix).strftime('%Y-%m-%d %H:%M:%S') if date_unix else "Unknown date"
+                    voice_name = item.get("voice_name", "Unknown voice")
+
+                    entry = (
+                        f"📅 <b>Date:</b> {date}\n"
+                        f"🎤 <b>Voice:</b> {voice_name}\n"
+                        f"📝 <b>Text:</b> <code>{text}</code>\n\n"
+                    )
+
+                    # Split into chunks if the message exceeds the Telegram limit
+                    if len(current_text) + len(entry) > 4000:
+                        history_texts.append(current_text)
+                        current_text = entry
+                    else:
+                        current_text += entry
+
+                # Append the last chunk
+                if current_text:
+                    history_texts.append(current_text)
+
+                # Send the chunks sequentially
+                for chunk in history_texts:
+                    await message.answer(chunk, parse_mode="HTML")
+            else:
+                await message.answer(
+                    f"<b>Error:</b> Unable to fetch history. (Status: {response.status_code})",
+                    parse_mode="HTML"
+                )
+    except Exception as e:
+        await message.answer(f"<b>Error:</b> {e}", parse_mode="HTML")
 
 @router.message(Command("profile"))
 async def show_config_command(message: Message):
@@ -392,10 +459,11 @@ async def set_bot_commands():
         BotCommand(command="setapi", description="Set your Eleven Labs API key"),
         BotCommand(command="setvoice", description="Set your voice ID"),
         BotCommand(command="setsettings", description="Set your voice settings"),
-        BotCommand(command="listvoices", description="Set your voice settings"),
         BotCommand(command="generate", description="Generate a voice from text"),
+        BotCommand(command="listvoices", description="Set your voice settings"),
         BotCommand(command="clearconfig", description="Clear your configuration"),
         BotCommand(command="profile", description="Show your current configuration"),
+        BotCommand(command="history", description="Get elevenlabs usage"),
     ]
     await bot.set_my_commands(commands)
 
