@@ -197,19 +197,61 @@ async def set_voice_command(message: types.Message):
 async def set_settings_command(message: Message):
     user_id = message.from_user.id
     args = message.text.split()
-    if len(args) < 3:
-        await message.answer("Please provide stability and similarity_boost values.")
+
+    # Check if the user provided sufficient arguments
+    if len(args) != 3:
+        await message.answer(
+            (
+                "❗ <b>Invalid usage</b>. To set voice settings, use the command like this:\n\n"
+                "<b>/voicesettings [Stability] [Similarity Boost]</b>\n\n"
+                "<b>Ranges:</b>\n"
+                "Stability: <b>0.1 to 1</b>\n"
+                "Similarity Boost: <b>0.1 to 1</b>\n\n"
+                "<b>Example:</b>\n"
+                "<code>/voicesettings 0.7 0.5</code>"
+            ),
+            parse_mode="HTML"
+        )
         return
 
     try:
+        # Parse and validate the input values
         stability, similarity_boost = map(float, args[1:])
+        if not (0.1 <= stability <= 1) or not (0.1 <= similarity_boost <= 1):
+            await message.answer(
+                (
+                    "❗ <b>Invalid values</b>. Both Stability and Similarity Boost must be between "
+                    "<b>0.1 and 1</b>.\n\n"
+                    "Please try again using valid values.\n"
+                    "<b>Example:</b> <code>/voicesettings 0.7 0.5</code>"
+                ),
+                parse_mode="HTML"
+            )
+            return
+
+        # Update the user settings in the database
         voice_settings = {"stability": stability, "similarity_boost": similarity_boost}
         await update_user_config(user_id, {"voice_settings": voice_settings})
-        await message.answer(f"Your voice settings have been set to Stability: {stability}, Similarity Boost: {similarity_boost}.")
+
+        # Confirm success
+        await message.answer(
+            (
+                "✅ <b>Your voice settings have been updated:</b>\n"
+                f"<b>Stability:</b> {stability}\n"
+                f"<b>Similarity Boost:</b> {similarity_boost}"
+            ),
+            parse_mode="HTML"
+        )
     except ValueError:
-        await message.answer("Invalid input. Please provide numerical values for stability and similarity_boost.")
-
-
+        await message.answer(
+            (
+                "❗ <b>Invalid input</b>. Please provide numerical values for Stability and Similarity Boost.\n\n"
+                "<b>Correct Usage:</b>\n"
+                "<code>/voicesettings 0.7 0.5</code>"
+            ),
+            parse_mode="HTML"
+        )
+        
 @router.message(Command("speech"))
 async def generate_voice_command(message: Message):
     user_id = message.from_user.id
