@@ -202,7 +202,7 @@ async def set_settings_command(message: Message):
     if len(args) != 3:
         await message.answer(
             (
-                "❗ <b>Invalid usage</b>. To set voice settings, use the command like this:\n\n"
+                "To set voice settings, use the command like this:\n\n"
                 "<b>/voicesettings [Stability] [Similarity Boost]</b>\n\n"
                 "<b>Ranges:</b>\n"
                 "Stability: <b>0.1 to 1</b>\n"
