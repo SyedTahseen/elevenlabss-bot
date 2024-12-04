@@ -258,7 +258,12 @@ async def generate_voice_command(message: Message):
     username = message.from_user.username
     args = message.text.split(maxsplit=1)
     if len(args) < 2:
-        await message.answer("Please provide the text to convert to speech.")
+        await message.answer(
+            "To generate Text-to-Speech, use this command like this:\n\n"
+            "<code>/speech [Text]</code>\n\n"
+            "Example: <code>/speech Hello, how are you?</code>",
+            parse_mode="HTML"
+        )
         return
 
     text = args[1].strip()
