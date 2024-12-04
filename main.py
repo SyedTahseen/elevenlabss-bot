@@ -11,7 +11,8 @@ from datetime import datetime
 from db import get_user_config, update_user_config, clear_user_config
 from aiogram.types import InlineKeyboardButton, InlineKeyboardMarkup
 from aiogram import types
-
+import uvloop
+uvloop.install()
 BOT_TOKEN = "7612501799:AAE95Z4VBPAKreCVM0sVa1CnV6xvnKOzaZ8"
 if not BOT_TOKEN:
     raise ValueError("Bot token is missing")
