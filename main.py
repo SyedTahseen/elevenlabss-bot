@@ -131,7 +131,7 @@ async def set_api_command(message: types.Message):
             [InlineKeyboardButton(text="Get your Eleven Labs API Key", url="https://elevenlabs.io/app/settings/api-keys")]
         ])
         await message.answer(
-            "To set your <b>Eleven Labs API key</b>, use this command like:\n"
+            "To set your <b>Eleven Labs API key</b>, use this command like:\n\n"
             "<code>/setapi [API_KEY]</code>\n\n"
             "Don't have an API key? Click the button below to get one.",
             reply_markup=keyboard,
