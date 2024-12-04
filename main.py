@@ -203,10 +203,10 @@ async def set_settings_command(message: Message):
         await message.answer(
             (
                 "To set voice settings, use the command like this:\n\n"
-                "<b>/voicesettings [Stability] [Similarity Boost]</b>\n\n"
+                "<code>/voicesettings [Stability] [Similarity Boost]</code>\n\n"
                 "<b>Ranges:</b>\n"
                 "Stability: <b>0.1 to 1</b>\n"
-                "Similarity Boost: <b>0.1 to 1</b>\n\n"
+                "Similarity Boost: <code>0.1 to 1</code>\n\n"
                 "<b>Example:</b>\n"
                 "<code>/voicesettings 0.7 0.5</code>"
             ),
