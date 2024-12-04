@@ -12,7 +12,6 @@ from db import get_user_config, update_user_config, clear_user_config
 from aiogram.types import InlineKeyboardButton, InlineKeyboardMarkup
 from aiogram import types
 
-# Define the Bot Token directly
 BOT_TOKEN = "7612501799:AAE95Z4VBPAKreCVM0sVa1CnV6xvnKOzaZ8"
 if not BOT_TOKEN:
     raise ValueError("Bot token is missing")
@@ -23,14 +22,12 @@ dp = Dispatcher(storage=storage)
 router = Router()  # Router for commands
 dp.include_router(router)
 
-# Default API Settings
 DEFAULT_PARAMS = {
     "voice_id": "21m00Tcm4TlvDq8ikWAM",  # Default voice ID
     "stability": 0.5,
     "similarity_boost": 0.7,
 }
 
-# Helper function to get or initialize character count
 async def get_or_initialize_character_count(user_id):
     user_config = await get_user_config(user_id)
     if not user_config:
@@ -50,7 +47,6 @@ async def get_existing_voices(api_key: str):
             return []
             
 
-# Function to generate audio with Eleven Labs API
 async def generate_elevenlabs_audio(text: str, api_key: str, voice_id: str, voice_settings: dict, audio_path: str):
     """
     Generates audio using the ElevenLabs API and saves it to the specified path.
@@ -81,7 +77,6 @@ async def generate_elevenlabs_audio(text: str, api_key: str, voice_id: str, voic
         else:
             raise ValueError(f"Error from ElevenLabs API (status {response.status_code}): {response.text}")
 
-# Function to upload file to file.io
 async def upload_to_file_io(file_path: str) -> str:
     """
     Uploads a file to file.io and returns the download link.
@@ -106,7 +101,7 @@ async def upload_to_file_io(file_path: str) -> str:
 async def start_command(message: types.Message):
     # Create an inline keyboard with buttons
     keyboard = InlineKeyboardMarkup(inline_keyboard=[
-        [InlineKeyboardButton(text="View Documentation", url="https://elevenlabs.io/docs")],
+        [InlineKeyboardButton(text="View Documentation", url="https://telegra.ph/Elevenlabs-Manager-Bot-Documentation-12-04")],
         [InlineKeyboardButton(text="Contact Support", url="https://t.me/xwvux")]
     ])
 
@@ -133,11 +128,11 @@ async def set_api_command(message: types.Message):
     if len(args) < 2:
         # Inline keyboard to guide users to get their API key
         keyboard = InlineKeyboardMarkup(inline_keyboard=[
-            [InlineKeyboardButton(text="Get your Eleven Labs API Key", url="https://elevenlabs.io")]
+            [InlineKeyboardButton(text="Get your Eleven Labs API Key", url="https://elevenlabs.io/app/settings/api-keys")]
         ])
         await message.answer(
             "To set your <b>Eleven Labs API key</b>, use this command like:\n"
-            "<code>/setapi &lt;your_api_key&gt;</code>\n\n"
+            "<code>/setapi [API_KEY]</code>\n\n"
             "Don't have an API key? Click the button below to get one.",
             reply_markup=keyboard,
             parse_mode="HTML"
@@ -181,15 +176,13 @@ async def set_voice_command(message: types.Message):
     args = message.text.split(maxsplit=1)
 
     if len(args) < 2:
-        # Create an inline keyboard with a button to fetch voice IDs
         keyboard = InlineKeyboardMarkup(inline_keyboard=[
             [InlineKeyboardButton(text="Get Voice IDs", url="https://elevenlabs.io/voice-lab")]
         ])
         
-        # Send a usage message with the inline button
         await message.answer(
-            "To set a <b>voice ID</b>, use this command like:\n\n"
-            "<code>/setvoice &lt;voice_id&gt;</code>\n\n"
+            "To set a <b>Voice ID</b>, use this command like:\n\n"
+            "<code>/setvoice [VOICE_ID]</code>\n\n"
             "Don't know your voice ID? Click the button below to explore available voices.",
             reply_markup=keyboard,
             parse_mode="HTML"
@@ -200,7 +193,7 @@ async def set_voice_command(message: types.Message):
     await update_user_config(user_id, {"voice_id": voice_id})
     await message.answer(f"Your <b>voice ID</b> has been set to <code>{voice_id}</code>.", parse_mode="HTML")
 
-@router.message(Command("setsettings"))
+@router.message(Command("voicesettings"))
 async def set_settings_command(message: Message):
     user_id = message.from_user.id
     args = message.text.split()
@@ -217,7 +210,7 @@ async def set_settings_command(message: Message):
         await message.answer("Invalid input. Please provide numerical values for stability and similarity_boost.")
 
 
-@router.message(Command("generate"))
+@router.message(Command("speech"))
 async def generate_voice_command(message: Message):
     user_id = message.from_user.id
     username = message.from_user.username
@@ -320,7 +313,7 @@ async def list_voices_command(message: Message):
         await message.answer("<b>No existing voices found.</b>", parse_mode="HTML")
         return
 
-    voices_list = "<b>Existing Voices:</b>\n"
+    voices_list = "<b>Available Voices:</b>\n"
     for voice in existing_voices:
         voice_name = voice.get('name', 'Unknown Voice')
         voice_id = voice.get('voice_id', 'Unknown ID')
@@ -458,9 +451,9 @@ async def set_bot_commands():
         BotCommand(command="start", description="Start the bot"),
         BotCommand(command="setapi", description="Set your Eleven Labs API key"),
         BotCommand(command="setvoice", description="Set your voice ID"),
-        BotCommand(command="setsettings", description="Set your voice settings"),
-        BotCommand(command="generate", description="Generate a voice from text"),
-        BotCommand(command="listvoices", description="Set your voice settings"),
+        BotCommand(command="voicesettings", description="Set your voice settings"),
+        BotCommand(command="speech", description="Generate text to speech"),
+        BotCommand(command="listvoices", description="List available voices"),
         BotCommand(command="clearconfig", description="Clear your configuration"),
         BotCommand(command="profile", description="Show your current configuration"),
         BotCommand(command="history", description="Get elevenlabs usage"),
