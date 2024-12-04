@@ -39,6 +39,7 @@ async def get_or_initialize_character_count(user_id):
 async def get_existing_voices(api_key: str):
     headers = {
         "xi-api-key": api_key,
+        "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/112.0.0.0 Safari/537.36",
     }
     async with httpx.AsyncClient() as client:
         response = await client.get("https://api.elevenlabs.io/v1/voices", headers=headers)
@@ -55,6 +56,7 @@ async def generate_elevenlabs_audio(text: str, api_key: str, voice_id: str, voic
     headers = {
         "xi-api-key": api_key,
         "Content-Type": "application/json",
+        "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/112.0.0.0 Safari/537.36",
     }
     voice_settings = {
         "stability": voice_settings.get("stability", 0.5),
