@@ -126,26 +126,58 @@ async def start_command(message: types.Message):
         reply_markup=keyboard
     )
 
+from db import add_api_key, get_api_keys, set_active_api_key, get_active_api_key
+
 @router.message(Command("setapi"))
 async def set_api_command(message: types.Message):
     user_id = message.from_user.id
     args = message.text.split(maxsplit=1)
 
     if len(args) < 2:
-        # Inline keyboard to guide users to get their API key
-        keyboard = InlineKeyboardMarkup(inline_keyboard=[
-            [InlineKeyboardButton(text="Get your Eleven Labs API Key", url="https://elevenlabs.io/app/settings/api-keys")]
-        ])
+        # If no argument is provided, show stored API keys and active key
+        stored_api_keys = await get_api_keys(user_id)
+        active_key = await get_active_api_key(user_id)
+        if not stored_api_keys:
+            await message.answer(
+                "You don't have any API keys saved. Use:\n<code>/setapi [API_KEY]</code> to add one.",
+                parse_mode="HTML"
+            )
+            return
+        
+        api_list = "\n".join(
+            [f"{index + 1}. <code>{key}</code>{' (Active)' if key == active_key else ''}" 
+             for index, key in enumerate(stored_api_keys)]
+        )
         await message.answer(
-            "To set your <b>Eleven Labs API key</b>, use this command like:\n\n"
-            "<code>/setapi [API_KEY]</code>\n\n"
-            "Don't have an API key? Click the button below to get one.",
-            reply_markup=keyboard,
+            f"<b>Your Stored API Keys:</b>\n{api_list}\n\n"
+            "To set an active key, use:\n<code>/setapi select [Index]</code>",
             parse_mode="HTML"
         )
         return
 
-    api_key = args[1].strip()
+    command_args = args[1].strip()
+
+    # If the command is to select an active API key
+    if command_args.startswith("select"):
+        try:
+            index = int(command_args.split()[1]) - 1
+            stored_api_keys = await get_api_keys(user_id)
+            if index < 0 or index >= len(stored_api_keys):
+                await message.answer("Invalid index. Please check your stored API keys and try again.")
+                return
+            
+            active_key = stored_api_keys[index]
+            await set_active_api_key(user_id, active_key)
+            await message.answer(
+                f"Your active API key has been set to:\n<code>{active_key}</code>",
+                parse_mode="HTML"
+            )
+        except (IndexError, ValueError):
+            await message.answer("Invalid format. Use:\n<code>/setapi select [Index]</code>", parse_mode="HTML")
+        return
+
+    # Otherwise, add a new API key
+    api_key = command_args
 
     # Verify the API key
     headers = {"xi-api-key": api_key}
@@ -154,24 +186,24 @@ async def set_api_command(message: types.Message):
             response = await client.get("https://api.elevenlabs.io/v1/user/subscription", headers=headers)
 
         if response.status_code == 200:
-            # Save the API key if it's valid
-            await update_user_config(user_id, {"api_key": api_key})
+            # Add the API key and set it as active
+            await add_api_key(user_id, api_key)
+            await set_active_api_key(user_id, api_key)
             subscription_info = response.json()
             character_limit = subscription_info.get("character_limit", "Unknown")
             await message.answer(
-                f"Your <b>API key</b> has been successfully verified and set. 🎉\n"
+                f"Your <b>API key</b> has been successfully added and set as active. 🎉\n"
                 f"<b>Character Limit:</b> {character_limit}",
                 parse_mode="HTML"
             )
         else:
             await message.answer(
-                f"<b>Error:</b> The API key is invalid or not authorized. Please check your key and try again.",
+                "Invalid API key. Please check your key and try again.",
                 parse_mode="HTML"
             )
     except Exception as e:
         await message.answer(
-            f"<b>Error:</b> Unable to verify the API key. Please try again later.\n"
-            f"<code>{str(e)}</code>",
+            f"Error verifying the API key. Please try again later.\n<code>{str(e)}</code>",
             parse_mode="HTML"
         )
 
