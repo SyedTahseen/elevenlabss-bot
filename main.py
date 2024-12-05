@@ -14,7 +14,6 @@ from aiogram import types
 import uvloop
 from aiogram.utils.keyboard import InlineKeyboardBuilder
 
-
 uvloop.install()
 BOT_TOKEN = "7612501799:AAE95Z4VBPAKreCVM0sVa1CnV6xvnKOzaZ8"
 if not BOT_TOKEN:
@@ -50,7 +49,52 @@ async def get_existing_voices(api_key: str):
             return response.json().get("voices", [])
         else:
             return []
-            
+
+# Add API
+@router.callback_query(F.callback_data == "add_api")
+async def add_api_callback(callback_query: types.CallbackQuery):
+    await callback_query.message.answer(
+        "To add an API key, use the /setapi command with your key.\nExample:\n<code>/setapi [API_KEY]</code>",
+        parse_mode="HTML"
+    )
+    await callback_query.answer()
+
+# List Voices
+@router.callback_query(F.callback_data == "list_voices")
+async def list_voices_callback(callback_query: types.CallbackQuery):
+    await list_voices_command(callback_query.message)
+    await callback_query.answer()
+
+# Profile
+@router.callback_query(F.callback_data == "profile")
+async def profile_callback(callback_query: types.CallbackQuery):
+    await show_config_command(callback_query.message)
+    await callback_query.answer()
+
+# Voice Settings
+@router.callback_query(F.callback_data == "voice_settings")
+async def voice_settings_callback(callback_query: types.CallbackQuery):
+    await callback_query.message.answer(
+        "To update voice settings, use:\n<code>/voicesettings [Stability] [Similarity Boost]</code>\nExample:\n<code>/voicesettings 0.7 0.5</code>",
+        parse_mode="HTML"
+    )
+    await callback_query.answer()
+
+# Generate Speech
+@router.callback_query(F.callback_data == "speech")
+async def speech_callback(callback_query: types.CallbackQuery):
+    await callback_query.message.answer(
+        "To generate speech, use the /speech command followed by the text.\nExample:\n<code>/speech Hello, how are you?</code>",
+        parse_mode="HTML"
+    )
+    await callback_query.answer()
+
+# Clear Config
+@router.callback_query(F.callback_data == "clear_config")
+async def clear_config_callback(callback_query: types.CallbackQuery):
+    await clear_config_command(callback_query.message)
+    await callback_query.answer("Configuration cleared.")
+    
 
 async def generate_elevenlabs_audio(text: str, api_key: str, voice_id: str, voice_settings: dict, audio_path: str):
     """
@@ -105,28 +149,27 @@ async def upload_to_file_io(file_path: str) -> str:
 # Command Handlers
 @router.message(Command("start"))
 async def start_command(message: types.Message):
-    # Create an inline keyboard with buttons
-    keyboard = InlineKeyboardMarkup(inline_keyboard=[
-        [InlineKeyboardButton(text="View Documentation", url="https://telegra.ph/Elevenlabs-Manager-Bot-Documentation-12-04")],
-        [InlineKeyboardButton(text="Contact Support", url="https://t.me/xwvux")]
-    ])
-
-    # Send the welcome message with the inline buttons
+    builder = InlineKeyboardBuilder()
+    builder.row(
+        InlineKeyboardButton(text="Add API", callback_data="add_api"),
+        InlineKeyboardButton(text="List Voices", callback_data="list_voices")
+    )
+    builder.row(
+        InlineKeyboardButton(text="Profile", callback_data="profile"),
+        InlineKeyboardButton(text="Voice Settings", callback_data="voice_settings")
+    )
+    builder.row(
+        InlineKeyboardButton(text="Generate Speech", callback_data="speech"),
+        InlineKeyboardButton(text="Clear Config", callback_data="clear_config")
+    )
     await message.answer(
-        "<b>Welcome to the ElevenLabs Manager!</b>\n\n"
-        "I'm here to help you manage your ElevenLabs account directly from Telegram.\n\n"
-        "<b>What can I do for you?</b>\n"
-        "• Generate text-to-speech\n"
-        "• Use multiple accounts\n"
-        "• Manage existing voices\n"
-        "• And much more!\n\n"
-        "Just send me a command to get started.\n\n"
-        "<b>Need help?</b> Use the buttons below to read the documentation or contact support.",
+        "<b>Welcome to the ElevenLabs Manager Bot!</b>\n\n"
+        "Choose an option from the menu below to manage your ElevenLabs account:",
         parse_mode="HTML",
-        reply_markup=keyboard
+        reply_markup=builder.as_markup()
     )
 
-from db import add_api_key, get_api_keys, set_active_api_key, get_active_api_key
+
 
 @router.message(Command("setapi"))
 async def set_api_command(message: types.Message):
