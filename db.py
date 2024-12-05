@@ -22,6 +22,36 @@ async def update_user_config(user_id, config_data):
 async def clear_user_config(user_id):
     await users_collection.update_one(
         {"user_id": user_id},
-        {"$set": {"api_key": None, "voice_id": None, "voice_settings": {}}},
+        {"$set": {"api_key": None, "voice_id": None, "voice_settings": {}, "api_keys": [], "active_api_key": None}},
         upsert=True
     )
+
+# Add a new API key for the user
+async def add_api_key(user_id, api_key):
+    user = await users_collection.find_one({"user_id": user_id})
+    api_keys = user.get("api_keys", []) if user else []
+    if api_key not in api_keys:
+        api_keys.append(api_key)
+    await users_collection.update_one(
+        {"user_id": user_id},
+        {"$set": {"api_keys": api_keys}},
+        upsert=True
+    )
+
+# Get all API keys for the user
+async def get_api_keys(user_id):
+    user = await users_collection.find_one({"user_id": user_id})
+    return user.get("api_keys", []) if user else []
+
+# Set the active API key for the user
+async def set_active_api_key(user_id, active_key):
+    await users_collection.update_one(
+        {"user_id": user_id},
+        {"$set": {"active_api_key": active_key}},
+        upsert=True
+    )
+
+# Get the active API key for the user
+async def get_active_api_key(user_id):
+    user = await users_collection.find_one({"user_id": user_id})
+    return user.get("active_api_key")
